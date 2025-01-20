@@ -90,7 +90,40 @@ def download(session):
 
 
 def pep(session):
-    pass
+    pep_url = 'https://peps.python.org/'
+    response = get_response(session, pep_url)
+    if response is None:
+        return
+    soup = BeautifulSoup(response.text, features='lxml')
+    rows = soup.find_all('tr', class_='row-even')
+    pep_count = 0
+    count_dict = {}
+    for row in rows:
+        abbr = row.find('abbr')
+        link = row.find('a', class_='pep reference internal')
+        if abbr and link:
+            status = abbr.text.strip()
+            link_href = link.get('href', '')
+            pep_count += 1
+            pep_link = urljoin(pep_url, link_href)
+            response = get_response(session, pep_link)
+            if response is None:
+                return
+            soup = BeautifulSoup(response.text, features='lxml')
+            table = soup.find('dl', attrs={'class': 'rfc2822 field-list simple'})
+            for dt in table.find_all('dt'):
+                if 'Status' in dt.text:
+                    status_tag = dt.find_next_sibling('dd').text
+                    if status_tag != status:
+                        status = status_tag
+                    if status_tag in count_dict:
+                        count_dict[status_tag] += 1
+                    else:
+                        count_dict[status_tag] = 1
+                    break
+    print('Нахождение строк', pep_count)
+    print(count_dict)
+    print('Сумма в словаре', sum(count_dict.values()))
 
 
 MODE_TO_FUNCTION = {
