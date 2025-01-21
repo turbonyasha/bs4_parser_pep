@@ -11,6 +11,17 @@ from configs import configure_argument_parser, configure_logging
 from outputs import control_output
 from utils import get_response, find_tag
 
+EXPECTED_STATUS = {
+    'A': ('Active', 'Accepted'),
+    'D': ('Deferred',),
+    'F': ('Final',),
+    'P': ('Provisional',),
+    'R': ('Rejected',),
+    'S': ('Superseded',),
+    'W': ('Withdrawn',),
+    '': ('Draft', 'Active'),
+}
+
 
 def whats_new(session):
     # Вместо константы WHATS_NEW_URL, используйте переменную whats_new_url.
@@ -89,20 +100,21 @@ def download(session):
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
-def pep(session):
+def get_pep(session):
     pep_url = 'https://peps.python.org/'
     response = get_response(session, pep_url)
     if response is None:
         return
     soup = BeautifulSoup(response.text, features='lxml')
-    rows = soup.find_all('tr', class_='row-even')
+    rows = soup.find_all('tr', class_=['row-even', 'row-odd'])
     pep_count = 0
     count_dict = {}
-    for row in rows:
+    not_same = 0
+    for row in tqdm(rows):
         abbr = row.find('abbr')
         link = row.find('a', class_='pep reference internal')
         if abbr and link:
-            status = abbr.text.strip()
+            status = abbr.text.strip()[1:]
             link_href = link.get('href', '')
             pep_count += 1
             pep_link = urljoin(pep_url, link_href)
@@ -111,17 +123,27 @@ def pep(session):
                 return
             soup = BeautifulSoup(response.text, features='lxml')
             table = soup.find('dl', attrs={'class': 'rfc2822 field-list simple'})
+            status_from_table = None
             for dt in table.find_all('dt'):
                 if 'Status' in dt.text:
-                    status_tag = dt.find_next_sibling('dd').text
-                    if status_tag != status:
-                        status = status_tag
-                    if status_tag in count_dict:
-                        count_dict[status_tag] += 1
-                    else:
-                        count_dict[status_tag] = 1
+                    status_tag = dt.find_next_sibling('dd').text.strip()
+                    status_from_table = status_tag
                     break
+            if not status_from_table:
+                status_from_table = status
+            for key, statuses in EXPECTED_STATUS.items():
+                if status_from_table in statuses:
+                    status_from_table = key
+                    break
+            if status_from_table != status:
+                status = status_from_table
+                not_same += 1
+            if status in count_dict:
+                count_dict[status] += 1
+            else:
+                count_dict[status] = 1
     print('Нахождение строк', pep_count)
+    print('Не одинаковых статусов', not_same)
     print(count_dict)
     print('Сумма в словаре', sum(count_dict.values()))
 
@@ -130,7 +152,7 @@ MODE_TO_FUNCTION = {
     'whats-new': whats_new,
     'latest-versions': latest_versions,
     'download': download,
-    'pep': pep,
+    'pep': get_pep,
 }
 
 
