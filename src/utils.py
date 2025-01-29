@@ -1,36 +1,35 @@
 import logging
 from requests import RequestException
 
+from bs4 import BeautifulSoup
+
 from exceptions import ParserFindTagException
 
+LOG_MESSAGE = 'Возникла ошибка при загрузке страницы {url}: {e}'
+NOT_FOUND_MESSAGE = 'Не найден тег {tag} {attrs}'
 
-def get_response(session, url):
+
+def get_soup(session, url, encoding='utf-8'):
     try:
         response = session.get(url)
-        response.encoding = 'utf-8'
-        return response
-    except RequestException:
-        logging.exception(
-            f'Возникла ошибка при загрузке страницы {url}',
-            stack_info=True
+        response.encoding = encoding
+        if response is None:
+            logging.error(f'Пустой ответ для {url}')
+            return
+        return BeautifulSoup(response.text, features='lxml')
+    except RequestException as e:
+        raise Exception(
+            LOG_MESSAGE.format(url=url, e=e)
         )
 
 
-def find_tag(soup, tag, attrs=None, string=None):
-    searched_tag = soup.find(tag, attrs=(attrs or {}), string=string)
+def find_tag(soup, tag, attrs=None, string=''):
+    searched_tag = soup.find(
+        tag, attrs=({} if attrs is None else attrs), string=string
+    )
     if searched_tag is None:
-        error_msg = f'Не найден тег {tag} {attrs}'
-        logging.error(error_msg, stack_info=True)
-        raise ParserFindTagException(error_msg)
+        raise ParserFindTagException(
+            NOT_FOUND_MESSAGE.format(
+                tag=tag, attrs=attrs
+            ))
     return searched_tag
-
-
-def write_pep_file(results_path, count_dict):
-    with open(results_path, 'w', encoding='utf-8') as file:
-        file.write('Статус Количество\n')
-        for key, value in count_dict.items():
-            if key == '':
-                file.write(f'" ": {value}\n')
-            else:
-                file.write(f'{key}: {value}\n')
-        file.write(f'Total {sum(count_dict.values())}')
