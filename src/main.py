@@ -2,13 +2,12 @@ import logging
 import re
 from urllib.parse import urljoin
 
-from bs4 import BeautifulSoup
 import requests_cache
 from tqdm import tqdm
 
 from constants import (
-    ALL_VERSIONS, DOWNLOADS_DIR, MAIN_DOC_URL, PEP_URL,
-    EXPECTED_STATUS, WHATS_NEW_HEAD, LATEST_VERSIONS_HEAD, PEP_HEAD, TOTAL
+    ALL_VERSIONS, DOWNLOADS_DIR, MAIN_DOC_URL, EXPECTED_STATUS,
+    LATEST_VERSIONS_HEAD, PEP_HEAD, PEP_URL, TOTAL, WHATS_NEW_HEAD
 )
 from configs import configure_argument_parser, configure_logging
 from outputs import control_output
