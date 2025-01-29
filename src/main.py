@@ -6,33 +6,25 @@ from bs4 import BeautifulSoup
 import requests_cache
 from tqdm import tqdm
 
-from constants import BASE_DIR, MAIN_DOC_URL
+from constants import BASE_DIR, MAIN_DOC_URL, PEP_URL, EXPECTED_STATUS
 from configs import configure_argument_parser, configure_logging
 from outputs import control_output
-from utils import get_response, find_tag
-
-EXPECTED_STATUS = {
-    'A': ('Active', 'Accepted'),
-    'D': ('Deferred',),
-    'F': ('Final',),
-    'P': ('Provisional',),
-    'R': ('Rejected',),
-    'S': ('Superseded',),
-    'W': ('Withdrawn',),
-    '': ('Draft', 'Active'),
-}
+from utils import get_response, find_tag, write_pep_file
 
 
 def whats_new(session):
-    # Вместо константы WHATS_NEW_URL, используйте переменную whats_new_url.
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     response = get_response(session, whats_new_url)
     if response is None:
         return
     soup = BeautifulSoup(response.text, features='lxml')
     main_div = find_tag(soup, 'section', attrs={'id': 'what-s-new-in-python'})
-    div_with_ul = find_tag(main_div, 'div', attrs={'class': 'toctree-wrapper compound'})
-    sections_by_python = div_with_ul.find_all('li', attrs={'class': 'toctree-l1'})
+    div_with_ul = find_tag(main_div, 'div', attrs={
+        'class': 'toctree-wrapper compound'
+    })
+    sections_by_python = div_with_ul.find_all(
+        'li', attrs={'class': 'toctree-l1'}
+    )
     results = [('Ссылка на статью', 'Заголовок', 'Редактор, автор')]
     for section in tqdm(sections_by_python):
         version_a_tag = find_tag(section, 'a')
@@ -80,7 +72,6 @@ def latest_versions(session):
 
 
 def download(session):
-    # Вместо константы DOWNLOADS_URL, используйте переменную downloads_url.
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     response = get_response(session, downloads_url)
     if response is None:
@@ -100,59 +91,52 @@ def download(session):
     logging.info(f'Архив был загружен и сохранён: {archive_path}')
 
 
-def get_pep(session):
-    pep_url = 'https://peps.python.org/'
+def pep(session):
+    pep_url = PEP_URL
     response = get_response(session, pep_url)
     if response is None:
         return
     soup = BeautifulSoup(response.text, features='lxml')
     rows = soup.find_all('tr', class_=['row-even', 'row-odd'])
-    pep_count = 0
     count_dict = {}
-    not_same = 0
     for row in tqdm(rows):
         abbr = row.find('abbr')
         link = row.find('a', class_='pep reference internal')
         if abbr and link:
             status = abbr.text.strip()[1:]
-            link_href = link.get('href', '')
-            pep_count += 1
-            pep_link = urljoin(pep_url, link_href)
-            response = get_response(session, pep_link)
+            response = get_response(
+                session, urljoin(pep_url, link.get('href', ''))
+            )
             if response is None:
                 return
-            soup = BeautifulSoup(response.text, features='lxml')
-            table = soup.find('dl', attrs={'class': 'rfc2822 field-list simple'})
+            pep_soup = BeautifulSoup(response.text, features='lxml')
+            table = pep_soup.find('dl', attrs={
+                'class': 'rfc2822 field-list simple'
+            })
             status_from_table = None
-            for dt in table.find_all('dt'):
-                if 'Status' in dt.text:
-                    status_tag = dt.find_next_sibling('dd').text.strip()
-                    status_from_table = status_tag
-                    break
-            if not status_from_table:
-                status_from_table = status
-            for key, statuses in EXPECTED_STATUS.items():
-                if status_from_table in statuses:
-                    status_from_table = key
-                    break
-            if status_from_table != status:
-                status = status_from_table
-                not_same += 1
-            if status in count_dict:
-                count_dict[status] += 1
-            else:
-                count_dict[status] = 1
-    print('Нахождение строк', pep_count)
-    print('Не одинаковых статусов', not_same)
-    print(count_dict)
-    print('Сумма в словаре', sum(count_dict.values()))
+            if table:
+                for dt in table.find_all('dt'):
+                    if 'Status' in dt.text:
+                        status_tag = dt.find_next_sibling('dd').text.strip()
+                        status_from_table = status_tag
+                        break
+                status = status_from_table if status_from_table else status
+                for key, statuses in EXPECTED_STATUS.items():
+                    if status in statuses:
+                        status = key
+                        break
+                count_dict[status] = count_dict.get(status, 0) + 1
+    results_dir = BASE_DIR / 'results'
+    results_dir.mkdir(exist_ok=True)
+    results_path = results_dir / 'all_peps.csv'
+    write_pep_file(results_path, count_dict)
 
 
 MODE_TO_FUNCTION = {
     'whats-new': whats_new,
     'latest-versions': latest_versions,
     'download': download,
-    'pep': get_pep,
+    'pep': pep,
 }
 
 

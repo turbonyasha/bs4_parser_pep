@@ -1,5 +1,4 @@
 import logging
-
 from requests import RequestException
 
 from exceptions import ParserFindTagException
@@ -24,3 +23,14 @@ def find_tag(soup, tag, attrs=None, string=None):
         logging.error(error_msg, stack_info=True)
         raise ParserFindTagException(error_msg)
     return searched_tag
+
+
+def write_pep_file(results_path, count_dict):
+    with open(results_path, 'w', encoding='utf-8') as file:
+        file.write('Статус Количество\n')
+        for key, value in count_dict.items():
+            if key == '':
+                file.write(f'" ": {value}\n')
+            else:
+                file.write(f'{key}: {value}\n')
+        file.write(f'Total {sum(count_dict.values())}')

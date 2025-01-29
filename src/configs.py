@@ -13,7 +13,7 @@ def configure_argument_parser(availible_modes):
     parser.add_argument(
         'mode',
         choices=availible_modes,
-        help='Режим работы парсера'
+        help='Режимы работы парсера'
     )
     parser.add_argument(
         '-c',
@@ -40,8 +40,6 @@ def configure_logging():
     logging.basicConfig(
         datefmt=DT_FORMAT,
         format=LOG_FORMAT,
-        # Уровень записи логов.
         level=logging.INFO,
-        # Вывод логов в терминал.
         handlers=(rotating_handler, logging.StreamHandler())
     )
