@@ -4,7 +4,7 @@ import logging
 
 from prettytable import PrettyTable
 
-from constants import DATETIME_FORMAT, PRETTY, FILE, RESULTS_DIR
+from constants import BASE_DIR, DATETIME_FORMAT, PRETTY, FILE, RESULTS_DIR
 
 FILE_MESSAGE = 'Файл с результатами был сохранён: {file_path}'
 
@@ -21,7 +21,7 @@ def control_output(results, cli_args):
 
 
 def file_output(results, cli_args):
-    results_dir = RESULTS_DIR
+    results_dir = BASE_DIR / RESULTS_DIR
     results_dir.mkdir(exist_ok=True)
     parser_mode = cli_args.mode
     now_formatted = dt.datetime.now().strftime(DATETIME_FORMAT)

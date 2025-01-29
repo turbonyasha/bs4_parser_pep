@@ -19,15 +19,15 @@ EXPECTED_STATUS = {
 }
 
 BASE_DIR = Path(__file__).parent
-LOG_DIR = BASE_DIR / 'logs'
-LOG_FILE = LOG_DIR / 'parser.log'
-RESULTS_DIR = BASE_DIR / 'results'
-DOWNLOADS_DIR = BASE_DIR / 'downloads'
+LOG_DIR = 'logs'
+LOG_FILE = 'parser.log'
+RESULTS_DIR = 'results'
+DOWNLOADS_DIR = 'downloads'
 
 PRETTY = 'pretty'
 FILE = 'file'
 ALL_VERSIONS = 'All versions'
-WHATS_NEW_HEAD = ['Ссылка на статью', 'Заголовок', 'Редактор, автор']
-LATEST_VERSIONS_HEAD = ['Ссылка на документацию', 'Версия', 'Статус']
+WHATS_NEW_HEAD = ('Ссылка на статью', 'Заголовок', 'Редактор, автор')
+LATEST_VERSIONS_HEAD = ('Ссылка на документацию', 'Версия', 'Статус')
 PEP_HEAD = ['Статус', 'Количество']
 TOTAL = 'Total'
