@@ -29,7 +29,7 @@ def whats_new(session):
     for a_tag in tqdm(
         get_soup(session, whats_new_url).select(
             '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 a'
-    )):
+        )):
         href = a_tag['href']
         version_link = urljoin(whats_new_url, href)
         try:
@@ -125,7 +125,7 @@ def pep(session):
         PEP_HEAD,
         *count_dict.items(),
         (TOTAL, sum(count_dict.values())),
-    ] 
+    ]
 
 
 MODE_TO_FUNCTION = {
