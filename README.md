@@ -64,3 +64,8 @@ optional arguments:
   -o {pretty,file}, --output {pretty,file}
                         Дополнительные способы вывода данных
 ```
+
+## Автор проекта
+[Женя Скуратова]
+- github [turbonyasha](https://github.com/turbonyasha)
+- telegram [@janedoel](https://t.me/janedoel)
