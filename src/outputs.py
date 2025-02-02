@@ -47,7 +47,8 @@ OUTPUT_FUNCTIONS = {
 
 
 def control_output(results, cli_args):
-    output_func = OUTPUT_FUNCTIONS.get(
-        cli_args.output
+    output_func = output_func = OUTPUT_FUNCTIONS.get(
+        cli_args.output,
+        OUTPUT_FUNCTIONS[DEFAULT]
     )
     output_func(results, cli_args)

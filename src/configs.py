@@ -23,8 +23,7 @@ def configure_argument_parser(availible_modes):
     parser.add_argument(
         '-o',
         '--output',
-        choices=(PRETTY, FILE, DEFAULT),
-        default=DEFAULT,
+        choices=(PRETTY, FILE),
         help='Дополнительные способы вывода данных'
     )
     return parser
