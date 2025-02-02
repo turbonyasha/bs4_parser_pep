@@ -1,8 +1,9 @@
 from collections import defaultdict
 import logging
-import re
 from urllib.parse import urljoin
+import re
 
+from requests import RequestException
 import requests_cache
 from tqdm import tqdm
 
@@ -26,6 +27,7 @@ URL_NOT_FOUND = 'Не найден url: {e}'
 def whats_new(session):
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     results = [WHATS_NEW_HEAD]
+    errors = []
     for a_tag in tqdm(
         get_soup(session, whats_new_url).select(
             '#what-s-new-in-python div.toctree-wrapper li.toctree-l1 a'
@@ -35,13 +37,15 @@ def whats_new(session):
         version_link = urljoin(whats_new_url, href)
         try:
             soup = get_soup(session, version_link)
-        except Exception as e:
-            logging.exception(URL_NOT_FOUND.format(e=e))
-        results.append((
-            version_link,
-            find_tag(soup, 'h1').text,
-            find_tag(soup, 'dl').text.replace('\n', ' ')
-        ))
+            results.append((
+                version_link,
+                find_tag(soup, 'h1').text,
+                find_tag(soup, 'dl').text.replace('\n', ' ')
+            ))
+        except RequestException as e:
+            errors.append(URL_NOT_FOUND.format(e=e))
+    if errors:
+        logging.error('\n'.join(errors))
     return results
 
 
@@ -71,10 +75,7 @@ def latest_versions(session):
 
 def download(session):
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
-    try:
-        soup = get_soup(session, downloads_url)
-    except Exception as e:
-        logging.exception(URL_NOT_FOUND.format(e=e))
+    soup = get_soup(session, downloads_url)
     archive_url = urljoin(
         downloads_url,
         soup.select_one(
@@ -94,7 +95,8 @@ def download(session):
 def pep(session):
     soup = get_soup(session, PEP_URL)
     rows = soup.find_all('tr', class_=['row-even', 'row-odd'])
-    count_dict = defaultdict(int)
+    results = defaultdict(int)
+    errors = []
     for row in tqdm(rows):
         abbr = row.find('abbr')
         link = row.find('a', class_='pep reference internal')
@@ -104,11 +106,11 @@ def pep(session):
                 pep_soup = get_soup(
                     session, urljoin(PEP_URL, link.get('href', ''))
                 )
-            except Exception as e:
-                logging.exception(URL_NOT_FOUND.format(e=e))
-            table = pep_soup.find('dl', attrs={
-                'class': 'rfc2822 field-list simple'
-            })
+                table = pep_soup.find('dl', attrs={
+                    'class': 'rfc2822 field-list simple'
+                })
+            except RequestException as e:
+                errors.append(URL_NOT_FOUND.format(e=e))
             status_from_table = None
             if table:
                 for dt in table.find_all('dt'):
@@ -121,11 +123,11 @@ def pep(session):
                     if status in statuses:
                         status = key
                         break
-                count_dict[status] += 1
+                results[status] += 1
     return [
         PEP_HEAD,
-        *count_dict.items(),
-        (TOTAL, sum(count_dict.values())),
+        *results.items(),
+        (TOTAL, sum(results.values())),
     ]
 
 

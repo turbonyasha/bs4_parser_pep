@@ -4,20 +4,10 @@ import logging
 
 from prettytable import PrettyTable
 
-from constants import BASE_DIR, DATETIME_FORMAT, PRETTY, FILE, RESULTS_DIR
+from constants import BASE_DIR, DATETIME_FORMAT, DEFAULT, PRETTY, FILE, RESULTS_DIR
 
 FILE_MESSAGE = 'Файл с результатами был сохранён: {file_path}'
 FILE_NAME = '{parser_mode}_{date}.csv'
-
-
-def control_output(results, cli_args):
-    output_func = OUTPUT_FUNCTIONS.get(
-        cli_args.output
-    )
-    if output_func is None:
-        default_output(results, cli_args)
-    else:
-        output_func(results, cli_args)
 
 
 def file_output(results, cli_args):
@@ -49,4 +39,12 @@ def pretty_output(results, cli_args=None):
 OUTPUT_FUNCTIONS = {
     PRETTY: pretty_output,
     FILE: file_output,
+    DEFAULT: default_output
 }
+
+
+def control_output(results, cli_args):
+    output_func = OUTPUT_FUNCTIONS.get(
+        cli_args.output
+    )
+    output_func(results, cli_args)

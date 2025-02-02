@@ -8,22 +8,21 @@ NOT_FOUND_MESSAGE = 'Не найден тег {tag} {attrs}'
 EMPTY_ANSWER = 'Пустой ответ для {url}'
 
 
+def get_soup(session, url, features='lxml'):
+    return BeautifulSoup(get_response(session, url).text, features=features)
+
+
 def get_response(session, url, encoding='utf-8'):
     try:
         response = session.get(url)
         response.encoding = encoding
+        if response is None:
+            return
         return response
     except RequestException as e:
-        raise Exception(
+        raise RequestException(
             LOG_MESSAGE.format(url=url, e=e)
         )
-
-
-def get_soup(session, url, features='lxml'):
-    response = get_response(session, url)
-    if response is None:
-        return
-    return BeautifulSoup(response.text, features=features)
 
 
 def find_tag(soup, tag, attrs=None, string=''):
