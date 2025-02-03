@@ -92,40 +92,47 @@ def download(session):
     logging.info(SUCCESS_DOWNLOAD.format(path=archive_path))
 
 
+def get_status_from_row(row, session, errors):
+    abbr = row.find('abbr')
+    link = row.find('a', class_='pep reference internal')
+    if abbr and link:
+        status = abbr.text.strip()[1:]
+        try:
+            pep_soup = get_soup(
+                session, urljoin(PEP_URL, link.get('href', ''))
+            )
+            table = pep_soup.find('dl', attrs={
+                'class': 'rfc2822 field-list simple'
+            })
+            if table:
+                for dt in table.find_all('dt'):
+                    if 'Status' in dt.text:
+                        status_tag = dt.find_next_sibling(
+                            'dd'
+                        ).text.strip()
+                        status_from_table = status_tag
+                        break
+                status = status_from_table if status_from_table else status
+                for key, statuses in EXPECTED_STATUS.items():
+                    if status in statuses:
+                        status = key
+                        break
+                return status
+        except RequestException as e:
+            errors.append(URL_NOT_FOUND.format(e=e))
+            return None
+    return None
+
+
 def pep(session):
     soup = get_soup(session, PEP_URL)
     rows = soup.find_all('tr', class_=['row-even', 'row-odd'])
     results = defaultdict(int)
     errors = []
     for row in tqdm(rows):
-        abbr = row.find('abbr')
-        link = row.find('a', class_='pep reference internal')
-        if abbr and link:
-            status = abbr.text.strip()[1:]
-            try:
-                pep_soup = get_soup(
-                    session, urljoin(PEP_URL, link.get('href', ''))
-                )
-                table = pep_soup.find('dl', attrs={
-                    'class': 'rfc2822 field-list simple'
-                })
-                if table:
-                    for dt in table.find_all('dt'):
-                        if 'Status' in dt.text:
-                            status_tag = dt.find_next_sibling(
-                                'dd'
-                            ).text.strip()
-                            status_from_table = status_tag
-                            break
-                    status = status_from_table if status_from_table else status
-                    for key, statuses in EXPECTED_STATUS.items():
-                        if status in statuses:
-                            status = key
-                            break
-                    results[status] += 1
-            except RequestException as e:
-                errors.append(URL_NOT_FOUND.format(e=e))
-            status_from_table = None
+        status = get_status_from_row(row, session, errors)
+        if status:
+            results[status] += 1
     if errors:
         logging.error('\n'.join(errors))
     return [
