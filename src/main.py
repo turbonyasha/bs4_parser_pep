@@ -112,7 +112,9 @@ def pep(session):
                 if table:
                     for dt in table.find_all('dt'):
                         if 'Status' in dt.text:
-                            status_tag = dt.find_next_sibling('dd').text.strip()
+                            status_tag = dt.find_next_sibling(
+                                'dd'
+                            ).text.strip()
                             status_from_table = status_tag
                             break
                     status = status_from_table if status_from_table else status

@@ -1,4 +1,3 @@
-from requests import RequestException
 from bs4 import BeautifulSoup
 
 from exceptions import ParserFindTagException

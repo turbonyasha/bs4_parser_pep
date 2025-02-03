@@ -48,7 +48,7 @@ OUTPUT_FUNCTIONS = {
 
 def control_output(results, cli_args):
     (
-        OUTPUT_FUNCTIONS[cli_args.output] 
-        if cli_args.output in OUTPUT_FUNCTIONS 
+        OUTPUT_FUNCTIONS[cli_args.output]
+        if cli_args.output in OUTPUT_FUNCTIONS
         else OUTPUT_FUNCTIONS['text']
     )(results, cli_args)
