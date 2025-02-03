@@ -109,21 +109,23 @@ def pep(session):
                 table = pep_soup.find('dl', attrs={
                     'class': 'rfc2822 field-list simple'
                 })
+                if table:
+                    for dt in table.find_all('dt'):
+                        if 'Status' in dt.text:
+                            status_tag = dt.find_next_sibling('dd').text.strip()
+                            status_from_table = status_tag
+                            break
+                    status = status_from_table if status_from_table else status
+                    for key, statuses in EXPECTED_STATUS.items():
+                        if status in statuses:
+                            status = key
+                            break
+                    results[status] += 1
             except RequestException as e:
                 errors.append(URL_NOT_FOUND.format(e=e))
             status_from_table = None
-            if table:
-                for dt in table.find_all('dt'):
-                    if 'Status' in dt.text:
-                        status_tag = dt.find_next_sibling('dd').text.strip()
-                        status_from_table = status_tag
-                        break
-                status = status_from_table if status_from_table else status
-                for key, statuses in EXPECTED_STATUS.items():
-                    if status in statuses:
-                        status = key
-                        break
-                results[status] += 1
+    if errors:
+        logging.error('\n'.join(errors))
     return [
         PEP_HEAD,
         *results.items(),

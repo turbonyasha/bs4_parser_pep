@@ -26,7 +26,6 @@ DOWNLOADS_DIR = 'downloads'
 
 PRETTY = 'pretty'
 FILE = 'file'
-DEFAULT = 'default'
 ALL_VERSIONS = 'All versions'
 WHATS_NEW_HEAD = ('Ссылка на статью', 'Заголовок', 'Редактор, автор')
 LATEST_VERSIONS_HEAD = ('Ссылка на документацию', 'Версия', 'Статус')
