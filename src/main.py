@@ -21,7 +21,7 @@ PARSER_START = 'Парсер запущен!'
 PARSER_FINISH = 'Парсер завершил работу.'
 PARSER_ARGS = 'Аргументы командной строки: {args}'
 PARSER_ERROR = 'Произошла ошибка в работе парсера: {e}'
-URL_NOT_FOUND = 'Не найден url: {e}'
+URL_NOT_FOUND = 'Не найден url: {url}, произошла ошибка: {e}'
 
 
 def whats_new(session):
@@ -98,29 +98,28 @@ def get_status_from_row(row, session, errors):
     if abbr and link:
         status = abbr.text.strip()[1:]
         try:
-            pep_soup = get_soup(
-                session, urljoin(PEP_URL, link.get('href', ''))
-            )
-            table = pep_soup.find('dl', attrs={
+            url = urljoin(PEP_URL, link.get('href', ''))
+            pep_soup = get_soup(session, url)
+        except RequestException as e:
+            errors.append(URL_NOT_FOUND.format(url=url, e=e))
+        table = pep_soup.find('dl', attrs={
                 'class': 'rfc2822 field-list simple'
             })
-            if table:
-                for dt in table.find_all('dt'):
-                    if 'Status' in dt.text:
-                        status_tag = dt.find_next_sibling(
-                            'dd'
-                        ).text.strip()
-                        status_from_table = status_tag
-                        break
-                status = status_from_table if status_from_table else status
-                for key, statuses in EXPECTED_STATUS.items():
-                    if status in statuses:
-                        status = key
-                        break
-                return status
-        except RequestException as e:
-            errors.append(URL_NOT_FOUND.format(e=e))
+        if not table:
             return None
+        for dt in table.find_all('dt'):
+            if 'Status' in dt.text:
+                status_tag = dt.find_next_sibling(
+                    'dd'
+                ).text.strip()
+                status_from_table = status_tag
+                break
+        status = status_from_table if status_from_table else status
+        for key, statuses in EXPECTED_STATUS.items():
+            if status in statuses:
+                status = key
+                break
+        return status
     return None
 
 
@@ -130,9 +129,34 @@ def pep(session):
     results = defaultdict(int)
     errors = []
     for row in tqdm(rows):
-        status = get_status_from_row(row, session, errors)
-        if status:
-            results[status] += 1
+        abbr = row.find('abbr')
+        link = row.find('a', class_='pep reference internal')
+        if not abbr or  not link:
+            continue
+        status = abbr.text.strip()[1:]
+        try:
+            url = urljoin(PEP_URL, link.get('href', ''))
+            pep_soup = get_soup(session, url)
+        except RequestException as e:
+            errors.append(URL_NOT_FOUND.format(url=url, e=e))
+        table = pep_soup.find('dl', attrs={
+                'class': 'rfc2822 field-list simple'
+            })
+        if not table:
+            return None
+        for dt in table.find_all('dt'):
+            if 'Status' in dt.text:
+                status_tag = dt.find_next_sibling(
+                    'dd'
+                ).text.strip()
+                status_from_table = status_tag
+                break
+        status = status_from_table if status_from_table else status
+        for key, statuses in EXPECTED_STATUS.items():
+            if status in statuses:
+                status = key
+                break
+        results[status] += 1
     if errors:
         logging.error('\n'.join(errors))
     return [

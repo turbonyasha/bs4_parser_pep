@@ -12,7 +12,7 @@ def get_response(session, url, encoding='utf-8'):
         response = session.get(url)
         response.encoding = encoding
         return response
-    except ConnectionError as e:
+    except Exception as e:
         raise ConnectionError(
             LOG_MESSAGE.format(url=url, e=e)
         )

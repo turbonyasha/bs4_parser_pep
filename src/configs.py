@@ -24,6 +24,7 @@ def configure_argument_parser(availible_modes):
         '-o',
         '--output',
         choices=(PRETTY, FILE),
+        default='console',
         help='Дополнительные способы вывода данных'
     )
     return parser
