@@ -42,7 +42,7 @@ def pretty_output(results, cli_args=None):
 OUTPUT_FUNCTIONS = {
     PRETTY: pretty_output,
     FILE: file_output,
-    'console': default_output
+    None: default_output
 }
 
 
