@@ -103,16 +103,17 @@ def pep(session):
         if not abbr or not link:
             continue
         status = abbr.text.strip()[1:]
+        url = urljoin(PEP_URL, link.get('href', ''))
         try:
-            url = urljoin(PEP_URL, link.get('href', ''))
             pep_soup = get_soup(session, url)
         except RequestException as e:
             errors.append(URL_NOT_FOUND.format(url=url, e=e))
+            continue
         table = pep_soup.find('dl', attrs={
                 'class': 'rfc2822 field-list simple'
             })
         if not table:
-            return None
+            continue
         for dt in table.find_all('dt'):
             if 'Status' in dt.text:
                 status_tag = dt.find_next_sibling(
@@ -120,11 +121,12 @@ def pep(session):
                 ).text.strip()
                 status_from_table = status_tag
                 break
-        status = status_from_table if status_from_table else status
-        for key, statuses in EXPECTED_STATUS.items():
-            if status in statuses:
-                status = key
-                break
+        if status_from_table:
+            status = status_from_table
+        status = next((
+            key for key, statuses in EXPECTED_STATUS.items()
+            if status in statuses
+        ), status)
         results[status] += 1
     if errors:
         logging.error('\n'.join(errors))
