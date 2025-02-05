@@ -1,4 +1,5 @@
 from bs4 import BeautifulSoup
+import requests
 
 from exceptions import ParserFindTagException
 
@@ -12,7 +13,7 @@ def get_response(session, url, encoding='utf-8'):
         response = session.get(url)
         response.encoding = encoding
         return response
-    except Exception as e:
+    except requests.exceptions.RequestException as e:
         raise ConnectionError(
             LOG_MESSAGE.format(url=url, e=e)
         )

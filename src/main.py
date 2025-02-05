@@ -106,12 +106,12 @@ def pep(session):
         url = urljoin(PEP_URL, link.get('href', ''))
         try:
             pep_soup = get_soup(session, url)
-        except RequestException as e:
+        except ValueError as e:
             errors.append(URL_NOT_FOUND.format(url=url, e=e))
             continue
         table = pep_soup.find('dl', attrs={
-                'class': 'rfc2822 field-list simple'
-            })
+            'class': 'rfc2822 field-list simple'
+        })
         if not table:
             continue
         for dt in table.find_all('dt'):
