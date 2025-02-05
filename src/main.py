@@ -3,7 +3,6 @@ import logging
 from urllib.parse import urljoin
 import re
 
-from requests import RequestException
 import requests_cache
 from tqdm import tqdm
 
