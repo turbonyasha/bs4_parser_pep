@@ -42,7 +42,7 @@ def whats_new(session):
                 find_tag(soup, 'h1').text,
                 find_tag(soup, 'dl').text.replace('\n', ' ')
             ))
-        except RequestException as e:
+        except ConnectionError as e:
             errors.append(URL_NOT_FOUND.format(e=e))
     if errors:
         logging.error('\n'.join(errors))
@@ -106,7 +106,7 @@ def pep(session):
         url = urljoin(PEP_URL, link.get('href', ''))
         try:
             pep_soup = get_soup(session, url)
-        except ValueError as e:
+        except ConnectionError as e:
             errors.append(URL_NOT_FOUND.format(url=url, e=e))
             continue
         table = pep_soup.find('dl', attrs={
